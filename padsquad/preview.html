@@ -24,11 +24,49 @@
         <!-- eIFAIOS                = %%ADVERTISING_IDENTIFIER_PLAIN%% -->
         <!-- eIFAAndroid            = %%ADVERTISING_IDENTIFIER_PLAIN%% -->
         <!-- eClickURL              = %%CLICK_URL_UNESC%% -->
-        <img style='display:none' src="data:image/png,pdsqdx" onerror="(function(img) {
-            var scrpt=document.createElement('script');
-            scrpt.src='https://dev-serve.simpli.padsquad.com/tags/122/15173';
-            img.parentNode.insertBefore(scrpt, img.nextSibling);
-        })(this)" />
+        <img id="pdsqdx-tag-img" style='display:none' src="data:image/png,pdsqdx" />
+        <script>
+            const tag = document.querySelector("#pdsqdx-tag-img");
+            let src = 'https://serve.simpli.padsquad.com/tags'
+       
+            // // get url and its query strings
+            function getQueryVariable(variable) {
+                let query = window.top.location.search.substring(1);
+                let vars = query.split("&");
+                for (let i = 0; i < vars.length; i++) {
+                    let pair = vars[i].split("=");
+                    if (pair[0] == variable) {
+                        return pair[1];
+                    }
+                }
+                return (false);
+            }
+
+            let env = getQueryVariable('env');
+            let campaing = getQueryVariable('campaing');
+            let placement = getQueryVariable('placement');
+
+            console.log("Environment: ", env, " | Campaing ID: ", campaing, " | Placement: ID ", placement);
+           
+            tag.addEventListener('error', function () {
+                let scrpt = document.createElement('script');
+
+                switch(env){
+                    case 'prod':
+                        scrpt.src = `https://serve.simpli.padsquad.com/tags/${campaing}/${placement}`;
+                    break
+                    case 'dev':
+                        scrpt.src = `https://${env}-serve.simpli.padsquad.com/tags/${campaing}/${placement}`;
+                    break
+                    default:
+                        scrpt.src = `https://serve.simpli.padsquad.com/tags/${campaing}/${placement}`;
+                    break
+
+                }
+                
+                this.parentNode.insertBefore(scrpt, this.nextSibling);
+            });
+        </script>
     </div>
 </body>
 
