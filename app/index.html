@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+</head>
+
+<body class="container">
+  <div><button id="background1">Background 1</button></div>
+  <div><button id="background2">Background 2</button></div>
+  <div><button id="getStarted">Get Started</button></div>
+  <div><button id="screenshot">Capturar</button></div>
+
+  <main>
+    <div id="webar"></div>
+    <div id="source">
+    </div>
+    <!-- <output></output> -->
+  </main>
+
+  <script src="BanubaClientToken.js"></script>
+  <script type="module">
+    import { Effect, Webcam, Image, Player, Module, VideoRecorder, ImageCapture, Dom } from "https://cdn.jsdelivr.net/npm/@banuba/webar/dist/BanubaSDK.browser.esm.min.js"
+
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    /** @see https://docs.banuba.com/face-ar-sdk-v1/web/web_known_issues#effect-animations-are-delayed-on-safari for details */
+    if (isSafari) navigator.serviceWorker.register("./range-requests.sw.js");
+
+    (async () => {
+      let lock = 30;
+      let source
+
+      const [player, modules] = await Promise.all([
+        Player.create({
+          clientToken: window.BANUBA_CLIENT_TOKEN,
+          proxyVideoRequestsTo: isSafari ? "___range-requests___/" : null,
+        }),
+        // Find more about available modules:
+        // https://docs.banuba.com/face-ar-sdk-v1/generated/typedoc/classes/Module.html
+        Module.preload(["face_tracker", "background", "hair"].map(m => `https://cdn.jsdelivr.net/npm/@banuba/webar/dist/modules/${m}.zip`)),
+      ])
+
+      await player.addModule(...modules)
+      if (source) {
+        player.use(source, { fps: 30 });
+      }
+
+      const getStarted = document.getElementById('getStarted');
+      const background1 = document.getElementById('background1');
+      const background2 = document.getElementById('background2');
+      const screenshot = document.getElementById('screenshot');
+
+      getStarted.addEventListener('click', e => {
+        source?.stop?.()
+        source = new Webcam()
+        player.use(source, { fps: lock })
+        Dom.render(player, "#webar");
+      });
+
+
+      background1.addEventListener('click', async () => {
+        const effect = await Effect.preload(`effects/BackgroundPictureBeach.zip`);
+        player.applyEffect(effect)
+      })
+
+      background2.addEventListener('click', async () => {
+        const effect = await Effect.preload(`effects/BackgroundPicture.zip`);
+        player.applyEffect(effect)
+      });
+
+      //#region image capture
+      const capture = new ImageCapture(player)
+
+      screenshot.addEventListener('click',async () => {
+        let link = document.createElement('a');
+        let linkText = document.createTextNode("screenshot");
+        link.appendChild(linkText);
+        link.title = "screenshot";
+        link.href = `${URL.createObjectURL(await capture.takePhoto())}`;
+        link.target = "_blank"
+        document.body.appendChild(link);
+      });
+
+    })()
+  </script>
+</body>
+
+</html>
